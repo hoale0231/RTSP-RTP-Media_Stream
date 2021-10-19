@@ -1,25 +1,62 @@
+# class VideoStream:
+# 	def __init__(self, filename):
+# 		self.filename = filename
+# 		try:
+# 			self.file = open(filename, 'rb')
+# 		except:
+# 			raise IOError
+# 		self.frameNum = 0
+		
+# 	def nextFrame(self):
+# 		"""Get next frame."""
+# 		data = self.file.read(5) # Get the framelength from the first 5 bits
+# 		if data: 
+# 			framelength = int(data)
+							
+# 			# Read the current frame
+# 			data = self.file.read(framelength)
+# 			self.frameNum += 1
+# 		return data
+		
+# 	def frameNbr(self):
+# 		"""Get frame number."""
+# 		return self.frameNum
+	
 class VideoStream:
 	def __init__(self, filename):
-		self.filename = filename
+		self.data = []
 		try:
-			self.file = open(filename, 'rb')
+			file = open(filename, 'rb')
+			while True:
+				data = file.read(5)
+				if data:
+					framelength = int(data)
+					self.data.append(file.read(framelength))
+				else:
+					break
 		except:
 			raise IOError
 		self.frameNum = 0
 		
+		
 	def nextFrame(self):
-		"""Get next frame."""
-		data = self.file.read(5) # Get the framelength from the first 5 bits
-		if data: 
-			framelength = int(data)
+		"""Get next frame."""	
+		#data = self.file.read(5) # Get the framelength from the first 5 bits
+		if self.frameNum < len(self.data): 
+			# framelength = int(data)
 							
-			# Read the current frame
-			data = self.file.read(framelength)
+			# # Read the current frame
+			data = self.data[self.frameNum]
 			self.frameNum += 1
-		return data
+			return data
 		
 	def frameNbr(self):
 		"""Get frame number."""
 		return self.frameNum
-	
+
+	def totalTime(self):
+		return len(self.data)
+
+	def setFrameNbr(self, num):
+		self.frameNum = num
 	
