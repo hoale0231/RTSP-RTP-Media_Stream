@@ -107,8 +107,8 @@ class ClientExtend(Client):
 
 	def settime(self, value):
 		value = int(value)
+		# Only send request if user change time
 		if self.frameNbr > value * 20 + 10 or self.frameNbr < value * 20 - 10:
-			print(value)
 			self.frameNbr = int(value) * 20
 			self.sendRtspRequest(self.SETTIME)
 
@@ -141,8 +141,7 @@ class ClientExtend(Client):
 			while self.state == ClientExtend.SWITCH:
 				continue
 		if self.state == ClientExtend.READY:
-			self.playEvent = threading.Event()
-			self.playEvent.clear()
+			self.playEvent = True
 			threading.Thread(target=self.listenRtp).start()
 			self.sendRtspRequest(ClientExtend.PLAY)
 
@@ -222,7 +221,7 @@ class ClientExtend(Client):
 						for video in response[4:]:
 							self.listVideo.insert(END, video)
 					elif self.requestSent == ClientExtend.SETTIME:
-						pass
+						return
 					elif self.requestSent == ClientExtend.SETUP:
 						self.state = ClientExtend.READY
 						self.start['text'] = 'PLAY'

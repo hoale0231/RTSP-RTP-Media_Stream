@@ -75,7 +75,7 @@ class Client:
 			# Setup RTSP
 			self.connectToServer()
 			threading.Thread(target=self.recvRtspReply).start()
-			# Send request SETUP
+			# Send request
 			self.sendRtspRequest(Client.SETUP)
 	
 	def exitClient(self):
@@ -85,8 +85,9 @@ class Client:
 			self.pauseMovie()
 			while self.state == Client.PLAYING:
 				continue
-		# 
+		
 		if self.state != Client.INIT:
+			# Send request
 			self.sendRtspRequest(Client.TEARDOWN)
 			if os.path.exists(CACHE_FILE_NAME + str(self.sessionId) + CACHE_FILE_EXT):
 				os.remove(CACHE_FILE_NAME + str(self.sessionId) + CACHE_FILE_EXT)
@@ -119,7 +120,7 @@ class Client:
 						self.updateMovie(self.writeFrame(rtpPacket.getPayload()))
 			except:
 				# Stop listening if request is PAUSE or TEARDOWN
-				if self.playEvent.isSet() or self.teardownAcked:
+				if self.playEvent.isSet():
 					break
 				if self.teardownAcked:
 					self.rtpSocket.shutdown(socket.SHUT_RDWR)
