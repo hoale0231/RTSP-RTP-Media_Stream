@@ -1,8 +1,7 @@
 from tkinter import *
 import tkinter.messagebox
 from PIL import Image, ImageTk
-import socket, threading,  os
-from RtpPacket import RtpPacket
+import threading
 from Client import Client
 
 CACHE_FILE_NAME = "cache-"
@@ -13,11 +12,14 @@ class ClientExtend(Client):
 	
 	GETLIST = 4
 	SETTIME = 5
-	CHECK = 6
+	CONNECT = 6
 	CHANGE = 7
+	DESCRIBE = 8
 
 	def __init__(self, master, serveraddr, serverport, rtpport, filename):
 		super().__init__(master, serveraddr, serverport, rtpport, filename)
+		self.connect()
+		self.getListVideo()
 		self.totalFrame = 0
 
 	def createWidgets(self):
@@ -38,11 +40,22 @@ class ClientExtend(Client):
 		self.pause["command"] = self.pauseMovie
 		self.pause.grid(row=3, column=2, padx=2, pady=2)
 		
-		# Create Teardown button
+		# Create STOP button
 		self.stop_reload = Button(self.master, width=15, padx=3, pady=3)
 		self.stop_reload["text"] = "STOP"
 		self.stop_reload["command"] =  self.exitClient
 		self.stop_reload.grid(row=3, column=3, padx=2, pady=2)
+
+		# Create describe button
+		self.describe = Button(self.master, width=15, padx=3, pady=3)
+		self.describe["text"] = "DESCRIBE"
+		self.describe["command"] =  self.getDescribe
+		self.describe.grid(row=3, column=5, padx=2, pady=2, sticky=N)
+
+		# Create total time label
+		self.contentDescribe = Label(self.master)
+		self.contentDescribe["text"] = ""
+		self.contentDescribe.grid(row=1, column=5 , sticky=W+S)
 
 		# Create Forward video button
 		self.forward = Button(self.master, width=5, padx=3, pady=3)
@@ -56,15 +69,9 @@ class ClientExtend(Client):
 		self.backward["command"] = self.backwardVideo
 		self.backward.grid(row=3, column=0, padx=2, pady=2)
 
-		# Create Get list button
-		self.switch = Button(self.master, width=15, height=1, padx=3, pady=3)
-		self.switch["text"] = "Get List Video"
-		self.switch["command"] =  self.getListVideo
-		self.switch.grid(row=0, column=5, padx=2, pady=2, sticky=N)
-
 		# Create list video label
 		self.songsFrame = LabelFrame(self.master, text='List Video', height=30)
-		self.songsFrame.grid(row=0, column=5, sticky=S)
+		self.songsFrame.grid(row=0, column=5, sticky=N)
 		self.scrol_y = Scrollbar(self.songsFrame, orient=VERTICAL)
 		self.listVideo = Listbox(self.songsFrame, yscrollcommand=self.scrol_y.set)
 		self.listVideo.grid(row=0, column=5, sticky=N)
@@ -94,7 +101,8 @@ class ClientExtend(Client):
 		if self.state != self.PLAYING and self.state != self.READY:
 			return
 		self.frameNbr -= 20 * 5 # 5 second
-		if self.frameNbr < 0: self.frameNbr = 0
+		if self.frameNbr < 0: 
+			self.frameNbr = 0
 		self.sendRtspRequest(self.SETTIME)
 
 	def settime(self, value):
@@ -104,18 +112,32 @@ class ClientExtend(Client):
 			self.frameNbr = int(value) * 20
 			self.sendRtspRequest(self.SETTIME)
 
+	def getDescribe(self):
+		if self.state != ClientExtend.SWITCH:
+			self.sendRtspRequest(ClientExtend.DESCRIBE)
+
 	def getListVideo(self):
-		self.listVideo.delete(0, END)
+		while self.state == Client.INIT:
+			continue
 		self.sendRtspRequest(ClientExtend.GETLIST)
+
+	def connect(self):
+		"""Connect button handler."""
+		if self.state == Client.INIT:
+			self.rtspSeq = 0
+			self.frameNbr = 0
+			self.teardownAcked = 0
+			self.connectToServer()
+			self.sendRtspRequest(ClientExtend.CONNECT)
 
 	def playMovie(self):
 		"""Play button handler."""
 		if self.state == ClientExtend.INIT:
-			self.setupMovie()
+			self.connect()
 			while self.state == Client.INIT:
 				continue
 		if self.state == ClientExtend.SWITCH:
-			self.sendRtspRequest(ClientExtend.CHANGE)
+			self.sendRtspRequest(ClientExtend.SETUP)
 			while self.state == ClientExtend.SWITCH:
 				continue
 		if self.state == ClientExtend.READY:
@@ -124,14 +146,14 @@ class ClientExtend(Client):
 			threading.Thread(target=self.listenRtp).start()
 			self.sendRtspRequest(ClientExtend.PLAY)
 
-	def switchVideo(self, value):
+	def switchVideo(self, something):
 		if self.state == ClientExtend.PLAYING:
 			self.pauseMovie()
 			while self.state == Client.PLAYING:
 				continue
-		if self.state == ClientExtend.READY:
+		if self.state == ClientExtend.READY or self.state == ClientExtend.SWITCH:
 			self.fileName = self.listVideo.get(ACTIVE)
-			self.sendRtspRequest(ClientExtend.CHECK)
+			self.sendRtspRequest(ClientExtend.CHANGE)
 
 	def updateMovie(self, imageFile):
 		"""Update the image file as video frame in the GUI."""
@@ -143,9 +165,10 @@ class ClientExtend(Client):
 	def sendRtspRequest(self, requestCode):
 			"""Send RTSP request to the server."""	
 			request = ""
-			if requestCode == ClientExtend.SETUP:
-				self.rtspSeq = 1
-				request += f"SETUP {self.fileName} RTSP/1.0\n"
+			self.rtspSeq = 0
+			if requestCode == ClientExtend.CONNECT:
+				threading.Thread(target=self.recvRtspReply).start()
+				request += f"CONNECT RTSP/1.0\n"
 				request += f"CSeq: {self.rtspSeq}\n"
 				request += f"Transport: RTP/UDP; client_port= {self.rtpPort}\n"
 			else:
@@ -159,10 +182,12 @@ class ClientExtend(Client):
 					request += f"GETLIST "
 				if requestCode == ClientExtend.SETTIME:
 					request += f"SETTIME {self.fileName} {self.frameNbr}"
-				if requestCode == ClientExtend.CHECK:
-					request += f"CHECK {self.fileName}"
+				if requestCode == ClientExtend.SETUP:
+					request += f"SETUP {self.fileName}"
 				if requestCode == ClientExtend.CHANGE:
 					request += f"CHANGE {self.fileName}"
+				if requestCode == ClientExtend.DESCRIBE:
+					request += f"DESCRIBE {self.fileName}"
 				request += f" RTSP/1.0\n"
 				request += f"CSeq: {self.rtspSeq}\n"
 				request += f"Session: {self.sessionId}\n"
@@ -179,9 +204,9 @@ class ClientExtend(Client):
 			seq = int(response[1].split(' ')[1])
 			if seq == self.rtspSeq:
 				session = int(response[2].split(' ')[1])
-				if self.requestSent == ClientExtend.SETUP:
+				if self.requestSent == ClientExtend.CONNECT:
 					self.sessionId = session
-					self.state = ClientExtend.READY
+					self.state = ClientExtend.SWITCH
 					self.openRtpPort()
 				else:
 					if self.sessionId != session: return
@@ -191,20 +216,22 @@ class ClientExtend(Client):
 					elif self.requestSent == ClientExtend.PAUSE:
 						self.state = ClientExtend.READY
 					elif self.requestSent == ClientExtend.TEARDOWN:
-						self.state = ClientExtend.INIT
+						self.state = ClientExtend.INIT		
 						self.teardownAcked = 1
 					elif self.requestSent == ClientExtend.GETLIST:
 						for video in response[4:]:
 							self.listVideo.insert(END, video)
 					elif self.requestSent == ClientExtend.SETTIME:
 						pass
-					elif self.requestSent == ClientExtend.CHECK:
-						self.state = ClientExtend.SWITCH
-						self.start['text'] = 'Reload'
+					elif self.requestSent == ClientExtend.SETUP:
+						self.state = ClientExtend.READY
+						self.start['text'] = 'PLAY'
 						self.frameNbr = 0
 					elif self.requestSent == ClientExtend.CHANGE:
-						self.state = ClientExtend.READY
-						self.start['text'] = 'Play'
+						self.state = ClientExtend.SWITCH
+						self.start['text'] = 'RELOAD'
+					elif self.requestSent == ClientExtend.DESCRIBE:
+						self.contentDescribe['text'] = '\n'.join(response[4:])
 
 		elif code == 404:
 			tkinter.messagebox.showwarning('File not found!')

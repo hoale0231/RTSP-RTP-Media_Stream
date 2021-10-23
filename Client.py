@@ -68,18 +68,24 @@ class Client:
 	def setupMovie(self):
 		"""Setup button handler."""
 		if self.state == Client.INIT:
+			# Reset session state
+			self.rtspSeq = 0
 			self.frameNbr = 0
 			self.teardownAcked = 0
+			# Setup RTSP
 			self.connectToServer()
 			threading.Thread(target=self.recvRtspReply).start()
+			# Send request SETUP
 			self.sendRtspRequest(Client.SETUP)
 	
 	def exitClient(self):
 		"""Teardown button handler."""
+		# Pause movie if it is playing
 		if self.state == Client.PLAYING:
 			self.pauseMovie()
 			while self.state == Client.PLAYING:
 				continue
+		# 
 		if self.state != Client.INIT:
 			self.sendRtspRequest(Client.TEARDOWN)
 			if os.path.exists(CACHE_FILE_NAME + str(self.sessionId) + CACHE_FILE_EXT):
@@ -112,8 +118,12 @@ class Client:
 						self.frameNbr = currFrameNbr
 						self.updateMovie(self.writeFrame(rtpPacket.getPayload()))
 			except:
-				# Stop sending if request is PAUSE or TEARDOWN
+				# Stop listening if request is PAUSE or TEARDOWN
 				if self.playEvent.isSet() or self.teardownAcked:
+					break
+				if self.teardownAcked:
+					self.rtpSocket.shutdown(socket.SHUT_RDWR)
+					self.rtpSocket.close()
 					break
 								
 	def writeFrame(self, data):
@@ -141,13 +151,12 @@ class Client:
 	def sendRtspRequest(self, requestCode):
 		"""Send RTSP request to the server."""	
 		request = ""
+		self.rtspSeq += 1
 		if requestCode == Client.SETUP:
-			self.rtspSeq = 1
 			request += f"SETUP {self.fileName} RTSP/1.0\n"
 			request += f"CSeq: {self.rtspSeq}\n"
 			request += f"Transport: RTP/UDP; client_port= {self.rtpPort}\n"
 		else:
-			self.rtspSeq += 1
 			if requestCode == Client.PLAY:
 				request += "PLAY"
 			if requestCode == Client.PAUSE:
@@ -175,7 +184,6 @@ class Client:
 			
 	def parseRtspReply(self, data: str):
 		"""Parse the RTSP reply from the server."""
-		print(self.requestSent, data)
 		response = data.split('\n')
 		code = int(response[0].split(' ')[1])
 		
