@@ -24,7 +24,7 @@ class ServerWorkerExtend(ServerWorker):
 		# Get the RTSP sequence number 
 		seq = request[1].split(' ')
 		
-		# Process SETUP request
+		# Process CONNECT request
 		if requestType == self.CONNECT:
 			if self.state == self.INIT:
 				# Update state
@@ -43,18 +43,17 @@ class ServerWorkerExtend(ServerWorker):
 		
 		# Get the media file name
 		filename = line1[1]
-
+		
+		# Process SETUP request 		
 		if requestType == self.SETUP:
 			if self.state == self.SWITCH:
-				# Update state
 				print("processing SETUP\n")
-				
 				try:
 					self.clientInfo['videoStream'] = VideoStream('video/'+filename)
+					# Update state
 					self.state = self.READY
 				except IOError:
 					self.replyRtsp(self.FILE_NOT_FOUND_404, seq[1])
-				
 				# Send RTSP reply
 				self.replyRtsp(self.OK_200, seq[1])
 				
@@ -62,13 +61,12 @@ class ServerWorkerExtend(ServerWorker):
 		if requestType == self.PLAY:
 			if self.state == self.READY:
 				print("processing PLAY\n")
+				# Update state
 				self.state = self.PLAYING
-				
 				# Create a new socket for RTP/UDP
 				self.clientInfo["rtpSocket"] = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-				
+				# Send RSTP reply
 				self.replyRtsp(self.OK_200, seq[1], self.PLAY)
-				
 				# Create a new thread and start sending RTP packets
 				self.clientInfo['event'] = threading.Event()
 				self.clientInfo['worker']= threading.Thread(target=self.sendRtp) 
@@ -78,47 +76,49 @@ class ServerWorkerExtend(ServerWorker):
 		elif requestType == self.PAUSE:
 			if self.state == self.PLAYING:
 				print("processing PAUSE\n")
+				# Update state
 				self.state = self.READY
-				
+				# Pause sending video frame
 				self.clientInfo['event'].set()
-			
+				# Send RSTP reply
 				self.replyRtsp(self.OK_200, seq[1])
 		
 		# Process TEARDOWN request
 		elif requestType == self.TEARDOWN:
 			if self.state != self.INIT:
 				print("processing TEARDOWN\n")
-
+				# Stop sending video frame
 				self.clientInfo['event'].set()
-				
+				# Send RSTP reply
 				self.replyRtsp(self.OK_200, seq[1])
-				
 				# Close the RTP socket
 				self.clientInfo['rtpSocket'].close()
 				
-		# Process TEARDOWN request
+		# Process GETLIST request
 		elif requestType == self.GETLIST:
 			print("processing GETLIST")
+			# Send List video
 			self.sendListVideo(seq[1])
 
 		# Process SETTIME request
 		elif requestType == self.SETTIME:
 			print("processing SETTIME")
+			# Update frame number
 			newFrameNbr = int(request[3].split(' ')[1])
 			self.clientInfo['videoStream'].setFrameNbr(newFrameNbr)
+			# Send reply request
 			self.replyRtsp(self.OK_200, seq[1])
 		
 		# Process CHANGE request
 		elif requestType == self.CHANGE:
 			if self.state == self.READY or self.state == self.SWITCH:
 				print("processing CHANGE")
+				# Check if video exists
 				try:
 					self.clientInfo['videoStream'] = VideoStream('video/'+filename)
-					self.clientInfo['videoStream'].setFrameNbr(0)
 					self.state = self.SWITCH
 				except IOError:
 					self.replyRtsp(self.FILE_NOT_FOUND_404, seq[1])
-				
 				# Send RTSP reply
 				self.replyRtsp(self.OK_200, seq[1])
 

@@ -55,7 +55,6 @@ class ServerWorker:
 			if self.state == self.INIT:
 				# Update state
 				print("processing SETUP\n")
-				
 				try:
 					self.clientInfo['videoStream'] = VideoStream('video/'+filename)
 					self.state = self.READY

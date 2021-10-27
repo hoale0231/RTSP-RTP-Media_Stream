@@ -22,9 +22,9 @@ class Client3Button(Client):
 		self.pause["command"] = self.pauseMovie
 		self.pause.grid(row=1, column=1, padx=2, pady=2)
 		
-		# Create Teardown button
+		# Create STOP button
 		self.teardown = Button(self.master, width=20, padx=3, pady=3)
-		self.teardown["text"] = "Teardown"
+		self.teardown["text"] = "STOP"
 		self.teardown["command"] =  self.exitClient
 		self.teardown.grid(row=1, column=2, padx=2, pady=2)
 		
@@ -34,10 +34,12 @@ class Client3Button(Client):
 	
 	def playMovie(self):
 		"""Play button handler."""
+		# If not yet setup connection, setup it.
 		if self.state == Client.INIT:
 			self.setupMovie()
 			while self.state == Client.INIT:
 				continue
+		# Play movie
 		if self.state == Client.READY:
 			self.playEvent = threading.Event()
 			self.playEvent.clear()

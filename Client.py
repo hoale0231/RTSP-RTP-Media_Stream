@@ -120,14 +120,18 @@ class Client:
 					rtpPacket = RtpPacket()
 					rtpPacket.decode(data)
 					currFrameNbr = rtpPacket.seqNum()
+					# Count loss packet
 					if currFrameNbr > self.frameNbr + 1:
 						packetLoss += currFrameNbr - (self.frameNbr + 1) 
+					# Count slow packet
 					if currFrameNbr < self.frameNbr:
 						packetSlow += 1
+					# Update frame
 					if currFrameNbr > self.frameNbr: 
 						self.frameNbr = currFrameNbr
-						payload = rtpPacket.getPacket()
+						payload = rtpPacket.getPayload()
 						self.updateMovie(self.writeFrame(payload))
+						# Count video data
 						videoData += len(payload)
 			except:
 				# Stop listening if request is PAUSE or TEARDOWN
@@ -138,6 +142,7 @@ class Client:
 					self.rtpSocket.close()
 					break
 		end = time()
+		# Calc and print data transmission parameters
 		print("\n===============================")
 		print(f"RTP Packet Loss Rate = {packetLoss-packetSlow}/{self.frameNbr} = {100 * (packetLoss-packetSlow)/self.frameNbr} %")
 		print(f"RTP Packet Loss Rate = {packetSlow}/{self.frameNbr} = {100 * packetSlow /self.frameNbr} %")
@@ -190,30 +195,33 @@ class Client:
 	def recvRtspReply(self):
 		"""Receive RTSP reply from the server."""
 		while True:
+			# Stop listening if teardown
 			if self.teardownAcked:
 				self.rtspSocket.shutdown(socket.SHUT_RDWR)
 				self.rtspSocket.close()
 				break
-			
+			# Recv reply and process
 			data = self.rtspSocket.recv(256)
 			if data: 
 				self.parseRtspReply(data.decode())
-	
-			
+				
 	def parseRtspReply(self, data: str):
 		"""Parse the RTSP reply from the server."""
 		response = data.split('\n')
 		code = int(response[0].split(' ')[1])
-		
+		# Check status code
 		if code == 200:
 			seq = int(response[1].split(' ')[1])
+			# Check sequence number
 			if seq == self.rtspSeq:
 				session = int(response[2].split(' ')[1])
+				# If requestSend is SETUP, update session ID
 				if self.requestSent == Client.SETUP:
 					self.sessionId = session
 					self.state = Client.READY
 					self.openRtpPort()
 				else:
+					# Else check session ID and process the reply
 					if self.sessionId != session: return
 					if self.requestSent == Client.PLAY:
 						self.state = Client.PLAYING
@@ -240,11 +248,17 @@ class Client:
 
 	def handler(self):
 		"""Handler on explicitly closing the GUI window."""
+		# Pause Movie if it is playing
 		self.pauseMovie()
+		# Ask user again
 		if tkinter.messagebox.askokcancel("Quit?", "Are you sure you want to quit?"):
+			# Remove all cache file
 			for file in glob.iglob(CACHE_FILE_NAME+'*'+CACHE_FILE_EXT):
 				os.remove(file)
+			# Teardown session
 			self.exitClient()
+			# Close app
 			self.master.destroy()
-		else: # When the user presses cancel, resume playing.
+		else: 
+			# When the user presses cancel, resume playing.
 			self.playMovie()

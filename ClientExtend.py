@@ -18,6 +18,7 @@ class ClientExtend(Client):
 
 	def __init__(self, master, serveraddr, serverport, rtpport, filename):
 		super().__init__(master, serveraddr, serverport, rtpport, filename)
+		# Connect server to get List Video
 		self.connect()
 		self.getListVideo()
 		self.totalFrame = 0
@@ -75,7 +76,6 @@ class ClientExtend(Client):
 		self.scrol_y = Scrollbar(self.songsFrame, orient=VERTICAL)
 		self.listVideo = Listbox(self.songsFrame, yscrollcommand=self.scrol_y.set)
 		self.listVideo.grid(row=0, column=5, sticky=N)
-
 		self.listVideo.bind('<Double-1>', self.switchVideo)
 
 		# Create time scroll bar	
@@ -91,21 +91,26 @@ class ClientExtend(Client):
 		"""Forward video button handler."""
 		if self.state != self.PLAYING and self.state != self.READY:
 			return
-		self.frameNbr += 20 * 5 # 5 second
+		self.frameNbr += 20 * 5 # 20 frame each second -> 5 second = 20 * 5 frame
+		# Check if forward exceed total time of video
 		if self.frameNbr > self.totalFrame:
 			self.frameNbr = self.totalFrame
+		# Send request
 		self.sendRtspRequest(ClientExtend.SETTIME)
 
 	def backwardVideo(self):
 		"""Backward video button handler."""
 		if self.state != self.PLAYING and self.state != self.READY:
 			return
-		self.frameNbr -= 20 * 5 # 5 second
+		self.frameNbr -= 20 * 5 # 20 frame each second -> 5 second = 20 * 5 frame
+		# Check if backward exceed 0
 		if self.frameNbr < 0: 
 			self.frameNbr = 0
+		# Send request
 		self.sendRtspRequest(self.SETTIME)
 
 	def settime(self, value):
+		"""Scroll bar handler."""
 		value = int(value)
 		# Only send request if user change time
 		if self.frameNbr > value * 20 + 10 or self.frameNbr < value * 20 - 10:
@@ -113,61 +118,73 @@ class ClientExtend(Client):
 			self.sendRtspRequest(self.SETTIME)
 
 	def getDescribe(self):
+		"""Describe button handler."""
 		if self.state != ClientExtend.SWITCH:
 			self.sendRtspRequest(ClientExtend.DESCRIBE)
 
 	def getListVideo(self):
+		""""Get List video request"""
 		while self.state == Client.INIT:
 			continue
 		self.sendRtspRequest(ClientExtend.GETLIST)
 
 	def connect(self):
-		"""Connect button handler."""
+		"""Setup RTSP connection to server"""
 		if self.state == Client.INIT:
+			# Reset session state
 			self.rtspSeq = 0
 			self.frameNbr = 0
 			self.teardownAcked = 0
+			# Connect and start listening reply
 			self.connectToServer()
+			threading.Thread(target=self.recvRtspReply).start()
+			# Send request
 			self.sendRtspRequest(ClientExtend.CONNECT)
 
 	def playMovie(self):
 		"""Play button handler."""
+		# If not yet setup connection, setup it.
 		if self.state == ClientExtend.INIT:
 			self.connect()
 			while self.state == Client.INIT:
 				continue
+		# If not yet setup video, setup it.
 		if self.state == ClientExtend.SWITCH:
 			self.sendRtspRequest(ClientExtend.SETUP)
 			while self.state == ClientExtend.SWITCH:
 				continue
+		# Play movie
 		if self.state == ClientExtend.READY:
 			self.playEvent = threading.Event()
 			self.playEvent.clear()
 			threading.Thread(target=self.listenRtp).start()
 			self.sendRtspRequest(ClientExtend.PLAY)
 
-	def switchVideo(self, something):
+	def switchVideo(self, any):
+		"""Switch video handler."""
+		# If video is playing, PAUSE it
 		if self.state == ClientExtend.PLAYING:
 			self.pauseMovie()
 			while self.state == Client.PLAYING:
 				continue
+		# Send CHANGE video request
 		if self.state == ClientExtend.READY or self.state == ClientExtend.SWITCH:
 			self.fileName = self.listVideo.get(ACTIVE)
 			self.sendRtspRequest(ClientExtend.CHANGE)
-
+	
 	def updateMovie(self, imageFile):
 		"""Update the image file as video frame in the GUI."""
 		photo = ImageTk.PhotoImage(Image.open(imageFile)) 
 		self.label.configure(image = photo, height=288)
 		self.label.image = photo
+		# Set video total time
 		self.scroll.set(self.frameNbr//20)
 
 	def sendRtspRequest(self, requestCode):
 			"""Send RTSP request to the server."""	
 			request = ""
-			self.rtspSeq = 0
+			self.rtspSeq += 1
 			if requestCode == ClientExtend.CONNECT:
-				threading.Thread(target=self.recvRtspReply).start()
 				request += f"CONNECT RTSP/1.0\n"
 				request += f"CSeq: {self.rtspSeq}\n"
 				request += f"Transport: RTP/UDP; client_port= {self.rtpPort}\n"
@@ -201,16 +218,19 @@ class ClientExtend(Client):
 		print(self.requestSent, data)
 		response = data.split('\n')
 		code = int(response[0].split(' ')[1])
-		
+		# Check status code
 		if code == 200:
 			seq = int(response[1].split(' ')[1])
+			# Check sequence number
 			if seq == self.rtspSeq:
 				session = int(response[2].split(' ')[1])
+				# If requestSend is SETUP, update session ID
 				if self.requestSent == ClientExtend.CONNECT:
 					self.sessionId = session
 					self.state = ClientExtend.SWITCH
 					self.openRtpPort()
 				else:
+					# Else check session ID and process the reply
 					if self.sessionId != session: return
 					if self.requestSent == ClientExtend.PLAY:
 						self.setTimeVideo(int(response[3].split(' ')[1]))
@@ -221,6 +241,7 @@ class ClientExtend(Client):
 						self.state = ClientExtend.INIT		
 						self.teardownAcked = 1
 					elif self.requestSent == ClientExtend.GETLIST:
+						# Update list video
 						for video in response[4:]:
 							self.listVideo.insert(END, video)
 					elif self.requestSent == ClientExtend.SETTIME:
@@ -241,6 +262,7 @@ class ClientExtend(Client):
 			tkinter.messagebox.showwarning('Connection error!')
 		
 	def setTimeVideo(self, time):
+		# Display total time
 		self.totalTime["text"] = f"{time/20}"
 		self.scroll["to"] = time/20
 		self.totalFrame = time
