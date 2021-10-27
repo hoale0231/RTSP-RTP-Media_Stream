@@ -141,7 +141,8 @@ class ClientExtend(Client):
 			while self.state == ClientExtend.SWITCH:
 				continue
 		if self.state == ClientExtend.READY:
-			self.playEvent = True
+			self.playEvent = threading.Event()
+			self.playEvent.clear()
 			threading.Thread(target=self.listenRtp).start()
 			self.sendRtspRequest(ClientExtend.PLAY)
 
@@ -178,9 +179,9 @@ class ClientExtend(Client):
 				if requestCode == ClientExtend.TEARDOWN:
 					request += f"TEARDOWN {self.fileName}"
 				if requestCode == ClientExtend.GETLIST:
-					request += f"GETLIST "
+					request += f"GETLIST /"
 				if requestCode == ClientExtend.SETTIME:
-					request += f"SETTIME {self.fileName} {self.frameNbr}"
+					request += f"SETTIME {self.fileName}"
 				if requestCode == ClientExtend.SETUP:
 					request += f"SETUP {self.fileName}"
 				if requestCode == ClientExtend.CHANGE:
@@ -190,6 +191,8 @@ class ClientExtend(Client):
 				request += f" RTSP/1.0\n"
 				request += f"CSeq: {self.rtspSeq}\n"
 				request += f"Session: {self.sessionId}\n"
+				if requestCode == ClientExtend.SETTIME:
+					request += f"FRAME: {self.frameNbr}"
 			self.requestSent = requestCode
 			self.rtspSocket.send(request.encode())
 

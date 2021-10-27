@@ -23,6 +23,7 @@ class ServerWorker:
 	
 	def __init__(self, clientInfo):
 		self.clientInfo = clientInfo
+		self.clientInfo['event'] = threading.Event()
 		
 	def run(self):
 		threading.Thread(target=self.recvRtspRequest).start()
@@ -82,7 +83,7 @@ class ServerWorker:
 				self.replyRtsp(self.OK_200, seq[1])
 				
 				# Create a new thread and start sending RTP packets
-				self.clientInfo['event'] = threading.Event()
+				
 				self.clientInfo['worker']= threading.Thread(target=self.sendRtp) 
 				self.clientInfo['worker'].start()
 		

@@ -4,6 +4,7 @@ from PIL import Image, ImageTk
 import socket, threading, os
 from RtpPacket import RtpPacket
 import glob
+from time import time
 
 CACHE_FILE_NAME = "cache-"
 CACHE_FILE_EXT = ".jpg"
@@ -32,6 +33,7 @@ class Client:
 		self.requestSent = -1
 		self.teardownAcked = 0
 		self.frameNbr = 0
+		self.playEvent = threading.Event()
 
 	# Initiatio
 	# THIS GUI IS JUST FOR REFERENCE ONLY, STUDENTS HAVE TO CREATE THEIR OWN GUI 	
@@ -101,23 +103,32 @@ class Client:
 	def playMovie(self):
 		"""Play button handler."""
 		if self.state == Client.READY:
-			self.playEvent = threading.Event()
 			self.playEvent.clear()
 			threading.Thread(target=self.listenRtp).start()
 			self.sendRtspRequest(Client.PLAY)
 			
 	def listenRtp(self):		
 		"""Listen for RTP packets."""
+		packetLoss = 0
+		packetSlow = 0
+		videoData = 0
+		start = time()
 		while True:
 			try:
 				data = self.rtpSocket.recv(20480)
 				if data:
 					rtpPacket = RtpPacket()
 					rtpPacket.decode(data)
-					currFrameNbr = rtpPacket.seqNum()			
+					currFrameNbr = rtpPacket.seqNum()
+					if currFrameNbr > self.frameNbr + 1:
+						packetLoss += currFrameNbr - (self.frameNbr + 1) 
+					if currFrameNbr < self.frameNbr:
+						packetSlow += 1
 					if currFrameNbr > self.frameNbr: 
 						self.frameNbr = currFrameNbr
-						self.updateMovie(self.writeFrame(rtpPacket.getPayload()))
+						payload = rtpPacket.getPacket()
+						self.updateMovie(self.writeFrame(payload))
+						videoData += len(payload)
 			except:
 				# Stop listening if request is PAUSE or TEARDOWN
 				if self.playEvent.isSet():
@@ -126,6 +137,12 @@ class Client:
 					self.rtpSocket.shutdown(socket.SHUT_RDWR)
 					self.rtpSocket.close()
 					break
+		end = time()
+		print("\n===============================")
+		print(f"RTP Packet Loss Rate = {packetLoss-packetSlow}/{self.frameNbr} = {100 * (packetLoss-packetSlow)/self.frameNbr} %")
+		print(f"RTP Packet Loss Rate = {packetSlow}/{self.frameNbr} = {100 * packetSlow /self.frameNbr} %")
+		print(f"Video data rate = {videoData}/{end - start} = {videoData/(end - start)} bytes/sec")
+		print("===============================\n")
 								
 	def writeFrame(self, data):
 		"""Write the received frame to a temp image file. Return the image file."""

@@ -29,7 +29,6 @@ class ServerWorkerExtend(ServerWorker):
 			if self.state == self.INIT:
 				# Update state
 				print("processing CONNECT\n")
-				
 				self.state = self.SWITCH
 
 				# Generate a randomized RTSP session ID
@@ -105,9 +104,11 @@ class ServerWorkerExtend(ServerWorker):
 		# Process SETTIME request
 		elif requestType == self.SETTIME:
 			print("processing SETTIME")
-			self.clientInfo['videoStream'].setFrameNbr(int(line1[2]))
+			newFrameNbr = int(request[3].split(' ')[1])
+			self.clientInfo['videoStream'].setFrameNbr(newFrameNbr)
 			self.replyRtsp(self.OK_200, seq[1])
 		
+		# Process CHANGE request
 		elif requestType == self.CHANGE:
 			if self.state == self.READY or self.state == self.SWITCH:
 				print("processing CHANGE")
