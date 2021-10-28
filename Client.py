@@ -88,7 +88,7 @@ class Client:
 			while self.state == Client.PLAYING:
 				continue
 		
-		if self.state != Client.INIT:
+		if self.state == Client.READY:
 			# Send request
 			self.sendRtspRequest(Client.TEARDOWN)
 			if os.path.exists(CACHE_FILE_NAME + str(self.sessionId) + CACHE_FILE_EXT):

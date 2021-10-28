@@ -82,6 +82,7 @@ class ServerWorker:
 				self.replyRtsp(self.OK_200, seq[1])
 				
 				# Create a new thread and start sending RTP packets
+				self.clientInfo['event'] = threading.Event()
 				
 				self.clientInfo['worker']= threading.Thread(target=self.sendRtp) 
 				self.clientInfo['worker'].start()
