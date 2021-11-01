@@ -4,9 +4,6 @@ from PIL import Image, ImageTk
 import threading
 from Client import Client
 
-CACHE_FILE_NAME = "cache-"
-CACHE_FILE_EXT = ".jpg"
-
 class ClientExtend(Client):
 	SWITCH = 3
 	
@@ -15,6 +12,7 @@ class ClientExtend(Client):
 	CONNECT = 6
 	CHANGE = 7
 	DESCRIBE = 8
+
 
 	def __init__(self, master, serveraddr, serverport, rtpport, filename):
 		super().__init__(master, serveraddr, serverport, rtpport, filename)

@@ -2,9 +2,6 @@ from tkinter import *
 import threading
 from Client import Client
 
-CACHE_FILE_NAME = "cache-"
-CACHE_FILE_EXT = ".jpg"
-
 class Client3Button(Client):
 
 	def createWidgets(self):
