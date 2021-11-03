@@ -1,7 +1,6 @@
 import sys, socket
-
-from ServerWorker import ServerWorker
-from ServerWorkerExtend import ServerWorkerExtend
+from Normal.ServerWorker import ServerWorker
+from Extend.ServerWorkerExtend import ServerWorkerExtend
 class Server:	
 	
 	def main(self):

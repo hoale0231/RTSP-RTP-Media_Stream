@@ -1,9 +1,9 @@
 from random import randint
-from ServerWorker import ServerWorker
+from Normal.ServerWorker import ServerWorker
 from glob import glob
 import socket
 import threading
-from VideoStream import VideoStream
+from Normal.VideoStream import VideoStream
 
 class ServerWorkerExtend(ServerWorker):
 	SWITCH = 3

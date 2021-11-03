@@ -1,8 +1,8 @@
 import sys
 from tkinter import Tk
-from Client import Client
-from Client3Button import Client3Button
-from ClientExtend import ClientExtend
+from Normal.Client import Client
+from Extend.Client3Button import Client3Button
+from Extend.ClientExtend import ClientExtend
 
 if __name__ == "__main__":
 	try:

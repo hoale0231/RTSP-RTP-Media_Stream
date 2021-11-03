@@ -1,3 +1,6 @@
 /__pycache__
 /.vscode
 .gitignore
+/Extend/__pycache__
+/Normal/__pycache__
+/Major/__pycache__

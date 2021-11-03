@@ -1,29 +1,28 @@
-# Run server
+# NORMAL MODE
+## Run server
 ```
-python Server.py 1025
+python Server.py [server_port]
 ```
-
-# Run server Extend mode
+## Run client
 ```
-python Server.py 1025 1
+python ClientLauncher.py localhost [server_port] [client_port] [videoName]
 ```
-
-# Run client
+## Run client 3 button
 ```
-python ClientLauncher.py localhost 1025 1027 movie.Mjpeg
+python ClientLauncher.py localhost [server_port] [client_port] [videoName] 1
 ```
-
-# Run client 3 button
+# EXTEND MODE
+## Run server extend mode
 ```
-python ClientLauncher.py localhost 1025 1027 movie.Mjpeg 1
+python Server.py [server_port] 1
 ```
-
-# Run client extend
+## Run client extend
 ```
-python ClientLauncher.py localhost 1025 1027 movie.Mjpeg 2
+python ClientLauncher.py localhost [server_port] [client_port] [videoName] 2
 ```
-
-# Run backend client web
+# WEB MODE
+## Run web server
 ```
-python backend.py
+python serverWeb.py
 ```
+## Access web client in [localhost:5000](localhost:5000)

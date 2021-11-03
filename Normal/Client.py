@@ -2,7 +2,7 @@ from tkinter import *
 import tkinter.messagebox
 from PIL import Image, ImageTk
 import socket, threading, os
-from RtpPacket import RtpPacket
+from Normal.RtpPacket import RtpPacket
 import glob
 from time import time
 

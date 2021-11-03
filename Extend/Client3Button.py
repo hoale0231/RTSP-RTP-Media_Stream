@@ -1,6 +1,6 @@
 from tkinter import *
 import threading
-from Client import Client
+from Normal.Client import Client
 
 class Client3Button(Client):
 

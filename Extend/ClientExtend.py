@@ -2,7 +2,7 @@ from tkinter import *
 import tkinter.messagebox
 from PIL import Image, ImageTk
 import threading
-from Client import Client
+from Normal.Client import Client
 
 class ClientExtend(Client):
 	SWITCH = 3

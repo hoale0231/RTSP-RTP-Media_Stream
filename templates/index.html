@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Media Streaming</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/socket.io/4.0.1/socket.io.js" integrity="sha512-q/dWJ3kcmjBLU4Qc47E4A9kTB4m3wuTY7vkFJDTZKjTs8jhyGQnaUrxa0Ytd0ssMZhbNua9hE+E7Qv1j+DyZwA==" crossorigin="anonymous"></script>
+    <style>
+      body {
+        background-color: rgba(5, 2, 2, 0.877);
+      }
+
+      #ButtonBox {
+        margin: auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 300px;
+      }
+
+      #PngBox {
+        background-color: antiquewhite;
+        margin: auto;
+        height: auto;
+        width: auto;
+        width: 383px;
+        height: 286px;
+        display: flex;
+        align-items: center;
+      }
+
+      .button {
+        margin: auto;
+      }
+
+      #time {
+        background-color: whitesmoke;
+        margin: auto;
+        margin-top: 20px;
+        justify-content: center;
+        align-items: center;
+        width: 140px;
+        position: relative;
+      }
+
+      #totalTime {
+        position: absolute;
+        right: 0;
+      } 
+
+      #listVideo {
+        margin: auto;
+        width: 300px;
+      }
+
+      #selectVideo {
+        margin-top: 10px;
+        width: 200px;
+      }
+      </style>
+  </head>
+  <body>
+    <div class='body'>
+      <div id="PngBox">
+        <img id="cachePng">
+      </div>
+      <div id="ButtonBox">
+        <button class="button" type="button" onclick='backward()'>&#60;&#60;</button>
+        <button class="button" type="button" onclick='play()'>Play</button>
+        <button class="button" type="button" onclick='pause()'>Pause</button>
+        <button class="button" type="button" onclick='stop()'>Stop</button>
+        <button class="button" type="button" onclick='forward()'>&#62;&#62;</button>
+      </div>
+      <div id='time'>
+        <div>
+          <span id='textTime'>Time: </span>
+          <span id="remainingTime">0</span>
+          <span id="totalTime">/0 second</span> 
+        </div>
+      </div>
+      <div id='listVideo'>
+        <select id='selectVideo'>
+        </select>
+        <input type="submit" onclick='changeVideo()'\>
+      </div>
+    </div>
+    <script src='/static/index.js'></script>
+  </body>
+</html>
