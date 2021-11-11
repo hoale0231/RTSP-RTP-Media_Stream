@@ -26,6 +26,7 @@
 ```
 ## UI
 ![](images/extend.png)
+
 👉👉 Double click name video to switch video
 ## Usage
 ### `Normal mode`
