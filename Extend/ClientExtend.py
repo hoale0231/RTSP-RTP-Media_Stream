@@ -41,7 +41,7 @@ class ClientExtend(Client):
 		
 		# Create STOP button
 		self.stop_reload = Button(self.master, width=15, padx=3, pady=3)
-		self.stop_reload["text"] = "STOP"
+		self.stop_reload["text"] = "Stop"
 		self.stop_reload["command"] =  self.exitClient
 		self.stop_reload.grid(row=3, column=3, padx=2, pady=2)
 
@@ -231,7 +231,7 @@ class ClientExtend(Client):
 					# Else check session ID and process the reply
 					if self.sessionId != session: return
 					if self.requestSent == ClientExtend.PLAY:
-						self.setTimeVideo(int(response[3].split(' ')[1]))
+						self.setTotalTimeVideo(int(response[3].split(' ')[1]))
 						self.state = ClientExtend.PLAYING
 					elif self.requestSent == ClientExtend.PAUSE:
 						self.state = ClientExtend.READY
@@ -259,8 +259,8 @@ class ClientExtend(Client):
 		elif code == 500: 
 			tkinter.messagebox.showwarning('Connection error!')
 		
-	def setTimeVideo(self, time):
+	def setTotalTimeVideo(self, totalFrame):
 		# Display total time
-		self.totalTime["text"] = f"{time/20}"
-		self.scroll["to"] = time/20
-		self.totalFrame = time
+		self.totalTime["text"] = f"{totalFrame/20}"
+		self.scroll["to"] = totalFrame/20
+		self.totalFrame = totalFrame

@@ -21,7 +21,7 @@ class Client3Button(Client):
 		
 		# Create STOP button
 		self.teardown = Button(self.master, width=20, padx=3, pady=3)
-		self.teardown["text"] = "STOP"
+		self.teardown["text"] = "Stop"
 		self.teardown["command"] =  self.exitClient
 		self.teardown.grid(row=1, column=2, padx=2, pady=2)
 		

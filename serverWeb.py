@@ -35,4 +35,5 @@ def hello():
     return render_template('index.html', message=message)
 
 if __name__ == "__main__":
-	socketio.run(app, host='localhost')
+    print('\n\nAccess http://127.0.0.1:5000\n\n', )
+    socketio.run(app)

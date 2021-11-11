@@ -133,6 +133,8 @@ class Client:
 						self.updateMovie(self.writeFrame(payload))
 						# Count video data
 						videoData += len(payload)
+						if self.frameNbr == 500:
+							break
 			except:
 				# Stop listening if request is PAUSE or TEARDOWN
 				if self.playEvent.isSet():
@@ -145,7 +147,7 @@ class Client:
 		# Calc and print data transmission parameters
 		print("\n===============================")
 		print(f"RTP Packet Loss Rate = {packetLoss-packetSlow}/{self.frameNbr} = {100 * (packetLoss-packetSlow)/self.frameNbr} %")
-		print(f"RTP Packet Loss Rate = {packetSlow}/{self.frameNbr} = {100 * packetSlow /self.frameNbr} %")
+		print(f"RTP Packet Slow Rate = {packetSlow}/{self.frameNbr} = {100 * packetSlow /self.frameNbr} %")
 		print(f"Video data rate = {videoData}/{end - start} = {videoData/(end - start)} bytes/sec")
 		print("===============================\n")
 								
