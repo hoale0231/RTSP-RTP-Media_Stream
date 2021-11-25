@@ -111,9 +111,6 @@ class ServerWorker:
 					self.clientInfo['socketIO'].emit('rtpPacket', data, to=self.clientInfo['room'])
 				except Exception as e:
 					print(e)
-					#print('-'*60)
-					#traceback.print_exc(file=sys.stdout)
-					#print('-'*60)
 		
 	def replyRtsp(self, code, seq, type=""):
 		"""Send RTSP reply to the client."""
