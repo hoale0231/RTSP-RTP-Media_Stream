@@ -26,6 +26,7 @@
 ```
 ## UI
 ![](images/extend.png)
+
 👉👉 Double click name video to switch video
 ## Usage
 ### `Normal mode`
@@ -35,12 +36,12 @@ python Server.py [server_port]
 ```
 - Run client
 ```
-python ClientLauncher.py [server addr] [server_port] [client_port] [videoName]
+python ClientLauncher.py [server addr] [server port] [client port] [video name]
 ```
 ### `3 button mode`
 - Run client 3 button
 ```
-python ClientLauncher.py [server addr] [server_port] [client_port] [videoName] 1
+python ClientLauncher.py [server addr] [server port] [client port] [video name] 1
 ```
 ### `Extend mode`
 - Run server extend mode
@@ -49,7 +50,7 @@ python Server.py [server_port] 1
 ```
 - Run client extend
 ```
-python ClientLauncher.py [server addr] [server_addr] [client_port] [videoName] 2
+python ClientLauncher.py [server addr] [server addr] [client port] [video name] 2
 ```
 ### `Web mode`
 - Run web server
